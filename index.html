@@ -4,11 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verum</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; margin: 0; background: #0f0f1a; color: #fff;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b1326;
+    }
+    #threejs-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
     }
     .card { text-align: center; }
     h1 { font-size: 48px; margin: 0; font-weight: 700; color: #0a7cff; letter-spacing: -1px; }
@@ -17,10 +37,115 @@
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Verum</h1>
-    <div class="bar"></div>
-    <p>Estamos construyendo algo increíble. Pronto estaremos en línea.</p>
+  <div id="threejs-bg"></div>
+  <div class="content">
+    <div class="card">
+      <h1>Verum</h1>
+      <div class="bar"></div>
+      <p>Estamos construyendo algo increíble. Pronto estaremos en línea.</p>
+    </div>
   </div>
+  <script>
+    (function() {
+      const container = document.getElementById('threejs-bg');
+      if (!container) return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 50;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0xd0bcff, 1.5);
+      pointLight.position.set(25, 25, 25);
+      scene.add(pointLight);
+
+      const pointLight2 = new THREE.PointLight(0xc0c1ff, 1.2);
+      pointLight2.position.set(-25, -25, 10);
+      scene.add(pointLight2);
+
+      const cubeGroup = new THREE.Group();
+      const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+
+      for (let i = 0; i < 30; i++) {
+        const material = new THREE.MeshPhongMaterial({
+          color: i % 2 === 0 ? 0xd0bcff : 0xc0c1ff,
+          transparent: true,
+          opacity: 0.8,
+          shininess: 100
+        });
+        const cube = new THREE.Mesh(cubeGeometry, material);
+        cube.position.x = (Math.random() - 0.5) * 60;
+        cube.position.y = (Math.random() - 0.5) * 60;
+        cube.position.z = (Math.random() - 0.5) * 40;
+        cube.rotation.x = Math.random() * Math.PI;
+        cube.rotation.y = Math.random() * Math.PI;
+        cube.userData.velocity = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.05,
+          (Math.random() - 0.5) * 0.05,
+          (Math.random() - 0.5) * 0.05
+        );
+        cubeGroup.add(cube);
+      }
+      scene.add(cubeGroup);
+
+      const particleCount = 1000;
+      const particles = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+
+      for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 100;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+        colors[i * 3] = 0.82;
+        colors[i * 3 + 1] = 0.74;
+        colors[i * 3 + 2] = 1.0;
+      }
+
+      particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const particleMaterial = new THREE.PointsMaterial({
+        size: 0.2,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6
+      });
+
+      const particleSystem = new THREE.Points(particles, particleMaterial);
+      scene.add(particleSystem);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        cubeGroup.children.forEach(cube => {
+          cube.position.add(cube.userData.velocity);
+          cube.rotation.x += 0.01;
+          cube.rotation.y += 0.01;
+          if (Math.abs(cube.position.x) > 40) cube.userData.velocity.x *= -1;
+          if (Math.abs(cube.position.y) > 40) cube.userData.velocity.y *= -1;
+          if (Math.abs(cube.position.z) > 40) cube.userData.velocity.z *= -1;
+        });
+        cubeGroup.rotation.y += 0.002;
+        particleSystem.rotation.y += 0.001;
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    })();
+  </script>
 </body>
 </html>

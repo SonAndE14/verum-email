@@ -1,6 +1,6 @@
-# Verum Corporate Email
+# Verum
 
-Sitio de verificación para correo corporativo Verum con Zoho Mail.
+Proyecto nuevo e interesante de rastreo. Pronto más detalles.
 
 ## DNS Setup
 
